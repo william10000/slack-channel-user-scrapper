@@ -16,7 +16,7 @@
 import json
 from haralyzer import HarParser
 
-har_file = 'morning.har'
+har_file = '*****.har'
 
 with open(har_file, 'r') as f:
   har_parser = HarParser(json.load(f))
@@ -31,11 +31,19 @@ for page in har_parser.pages:
     if entry['response']['headers']:
       for header in entry['response']['headers']:
         if header['name'].lower() == 'content-type' and 'application/json' in header['value']:
-          textDict = json.loads(entry['response']['content']['text'])
-          if 'results' in textDict.keys():
-            response_results = textDict['results']
-            for response_result in response_results:
-              aggregated_list.append(f"{response_result['real_name']} - {response_result['profile']['title']}\n")
+          response_text = entry['response']['content']['text']
+          if response_text:  # Check if the response text is not empty
+            try:
+              textDict = json.loads(response_text)
+              if 'results' in textDict:
+                response_results = textDict['results']
+                for response_result in response_results:
+                  aggregated_list.append(f"{response_result['real_name']} - {response_result['profile']['title']}\n")
+            except json.JSONDecodeError as e:
+              print(f"Failed to parse JSON: {e}")
+              print(f"Problematic content: {response_text[:100]}...")  # Print first 100 chars for debugging
+          else:
+            print("Empty response content")
 
 output_file = har_file.split('.')[0] + '.txt'
 
